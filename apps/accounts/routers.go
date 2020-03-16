@@ -6,6 +6,6 @@ import (
 
 func AddAppRouter(router *mux.Router) {
 	router.HandleFunc("/sign-up/", signUpHandler).Methods("POST")
-	//router.HandleFunc("/sign-in", signInHandler)
-	//router.HandleFunc("/profile", profileHandler)
+	router.HandleFunc("/sign-in/", signInHandler).Methods("POST")
+	router.HandleFunc("/profile/", profileHandler).Methods("GET", "PUT", "DELETE")
 }

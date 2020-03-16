@@ -1,7 +1,9 @@
 package core
 
 import (
+	"errors"
 	"github.com/dgrijalva/jwt-go"
+	"strings"
 	"time"
 )
 
@@ -15,7 +17,7 @@ type UserJwtToken struct {
 	Refresh string `json:"refresh"`
 }
 
-func CreateNewUserJwtToken(userEmail string) UserJwtToken {
+func CreateUserNewJwtToken(userEmail string) UserJwtToken {
 	// Create the JWT access & refresh claims, which includes the user email and expiry time
 	accessClaims := &UserJwtClaims{
 		UserEmail: userEmail,
@@ -49,4 +51,31 @@ func CreateNewUserJwtToken(userEmail string) UserJwtToken {
 	}
 
 	return UserJwtToken{Access: accessTokenString, Refresh: refreshTokenString}
+}
+
+func CleanJwtToken(jwtToken string) string {
+	jwtOnly := strings.Split(jwtToken, " ")
+	if l := len(jwtOnly); l > 1 {
+		return jwtOnly[1]
+	}
+	return jwtOnly[0]
+}
+
+func CheckUserJwtToken(jwtToken string) (string, error) {
+	tkn, err := jwt.ParseWithClaims(CleanJwtToken(jwtToken), &UserJwtClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return GetJwtSecretKey(), nil
+	})
+
+	// Initialize a new instance of UserJwtClaims
+	if err != nil {
+		if err == jwt.ErrSignatureInvalid {
+			return "", err
+		}
+		return "", err
+	}
+	if !tkn.Valid {
+		return "", errors.New("invalid jwt token")
+	}
+
+	return tkn.Claims.(*UserJwtClaims).UserEmail, nil
 }

@@ -11,28 +11,34 @@ func ErrorHandler(err error) {
 	}
 }
 
-//func GetDb(r *http.Request) *pg.DB {
-//	return r.Context().Value("db").(*pg.DB)
-//}
-
 func JsonResponce(w http.ResponseWriter, js []byte, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	w.Write(js)
 }
 
-func JsonBadRequestErrorHandler(w http.ResponseWriter, err error) {
+func JsonBadRequestErrorHandler(w http.ResponseWriter, err error) bool {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return true
 	}
+	return false
 }
 
-func JsonInternalServerErrorHandler(w http.ResponseWriter, err error) {
+func JsonInternalServerErrorHandler(w http.ResponseWriter, err error) bool {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return true
 	}
+	return false
+}
+
+func JsonUnauthorizedErrorHandler(w http.ResponseWriter, err error) bool {
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return true
+	}
+	return false
 }
 
 func GetJwtSecretKey() []byte {

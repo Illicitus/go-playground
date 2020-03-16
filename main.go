@@ -7,10 +7,6 @@ import (
 	"net/http"
 )
 
-//func home(w http.ResponseWriter, r *http.Request) {
-//	w.Header().Set("Content-Type", "application/json")
-//}
-
 func main() {
 
 	// Collect routers
@@ -27,13 +23,8 @@ func main() {
 
 	core.ErrorHandler(core.CreateSchema(db, apps))
 
-	//// Add db to request context
-	//r.Use(core.DatabaseMiddleware(db))
-
 	// Setup jwt
 	r.Use(core.JwtAuthMiddleware(db))
-
-	//defer core.ErrorHandler(db.Close())
 
 	http.ListenAndServe(":5000", r)
 	defer core.ErrorHandler(core.CloseDatabase())
