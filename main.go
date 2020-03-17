@@ -3,22 +3,29 @@ package main
 import (
 	"github.com/gorilla/mux"
 	"go-playground/apps/accounts"
+	"go-playground/apps/books"
 	"go-playground/core"
-	"net/http"
+	"go-playground/core/settings"
+	"go-playground/server"
 )
 
 func main() {
+	// Init settings
+	settings.Init("local")
 
 	// Collect routers
 	r := mux.NewRouter()
 	accounts.AddAppRouter(r.PathPrefix("/accounts").Subrouter())
+	books.AddAppRouter(r.PathPrefix("/books").Subrouter())
 
 	// Db connection
 	db := core.DbConnect()
+	core.EnableDbQueryLogger()
 
 	// Setup db tables
 	apps := []interface{}{
 		(*accounts.User)(nil),
+		(*books.Book)(nil),
 	}
 
 	core.ErrorHandler(core.CreateSchema(db, apps))
@@ -26,6 +33,6 @@ func main() {
 	// Setup jwt
 	r.Use(core.JwtAuthMiddleware(db))
 
-	http.ListenAndServe(":5000", r)
+	server.Serve(r)
 	defer core.ErrorHandler(core.CloseDatabase())
 }

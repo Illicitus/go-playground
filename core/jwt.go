@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"github.com/dgrijalva/jwt-go"
+	"go-playground/core/settings"
 	"strings"
 	"time"
 )
@@ -18,12 +19,14 @@ type UserJwtToken struct {
 }
 
 func CreateUserNewJwtToken(userId int64) UserJwtToken {
+	s := settings.GetSettings()
+
 	// Create the JWT access & refresh claims, which includes the user email and expiry time
 	accessClaims := &UserJwtClaims{
 		UserId: userId,
 		StandardClaims: jwt.StandardClaims{
 			// In JWT, the expiry time is expressed as unix milliseconds
-			ExpiresAt: time.Now().Add(5 * time.Minute).Unix(),
+			ExpiresAt: time.Now().Add(time.Duration(s.GetInt("jwt.access_expire_time")) * time.Minute).Unix(),
 		},
 	}
 
@@ -32,7 +35,7 @@ func CreateUserNewJwtToken(userId int64) UserJwtToken {
 		StandardClaims: jwt.StandardClaims{
 
 			// In JWT, the expiry time is expressed as unix milliseconds
-			ExpiresAt: time.Now().Add(60 * time.Minute).Unix(),
+			ExpiresAt: time.Now().Add(time.Duration(s.GetInt("jwt.refresh_expire_time")) * time.Minute).Unix(),
 		},
 	}
 
@@ -41,12 +44,12 @@ func CreateUserNewJwtToken(userId int64) UserJwtToken {
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 
 	// Create the access & refresh JWT strings
-	accessTokenString, err := accessToken.SignedString(GetJwtSecretKey())
+	accessTokenString, err := accessToken.SignedString([]byte(s.GetString("jwt.secret_key")))
 	if err != nil {
 		panic(err)
 	}
 
-	refreshTokenString, err := refreshToken.SignedString(GetJwtSecretKey())
+	refreshTokenString, err := refreshToken.SignedString([]byte(s.GetString("jwt.secret_key")))
 	if err != nil {
 		panic(err)
 	}
@@ -64,8 +67,10 @@ func CleanJwtToken(jwtToken string) string {
 }
 
 func CheckUserJwtToken(jwtToken string) (int64, error) {
+	s := settings.GetSettings()
+
 	tkn, err := jwt.ParseWithClaims(CleanJwtToken(jwtToken), &UserJwtClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return GetJwtSecretKey(), nil
+		return []byte(s.GetString("jwt.secret_key")), nil
 	})
 
 	// Initialize a new instance of UserJwtClaims

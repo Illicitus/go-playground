@@ -28,6 +28,7 @@ func PermissionsCheck(permission string, u interface{}, w http.ResponseWriter, r
 			}
 			return true
 		}
+		JsonUnauthorizedErrorHandler(w, errors.New("unauthorized"))
 		return false
 	}
 }

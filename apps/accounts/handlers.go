@@ -10,30 +10,25 @@ import (
 func signUpHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Decode json and create user object
-	var u User
-	err := json.NewDecoder(r.Body).Decode(&u)
+	var user User
+	err := json.NewDecoder(r.Body).Decode(&user)
 	if core.JsonBadRequestErrorHandler(w, err) {
 		return
 	}
 
 	// Setup user hashed password
-	u.setPassword()
+	user.setPassword()
 
 	// Get db connection and insert new user
 	db := core.GetDb()
 
-	err = db.Insert(&u)
+	err = db.Insert(&user)
 	if core.JsonBadRequestErrorHandler(w, err) {
 		return
 	}
 
 	// Return user object as response and add jwt token
-	js, err := json.Marshal(UserProfileWithTokenSchema{
-		Id:    u.Id,
-		Name:  u.Name,
-		Email: u.Email,
-		Token: core.CreateUserNewJwtToken(u.Id),
-	})
+	js, err := serializeUserProfileWithTokenSchema(user)
 	if core.JsonInternalServerErrorHandler(w, err) {
 		return
 	}
@@ -78,12 +73,7 @@ func signInHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return user object as response and add jwt token
-	js, err := json.Marshal(UserProfileWithTokenSchema{
-		Id:    user.Id,
-		Name:  user.Name,
-		Email: user.Email,
-		Token: core.CreateUserNewJwtToken(user.Id),
-	})
+	js, err := serializeUserProfileWithTokenSchema(user)
 	if core.JsonInternalServerErrorHandler(w, err) {
 		return
 	}
@@ -106,11 +96,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	default: // GET
 
 		// Return user object as response
-		js, err := json.Marshal(UserProfile{
-			Id:    user.Id,
-			Name:  user.Name,
-			Email: user.Email,
-		})
+		js, err := serializeUserProfileSchema(user)
 		if core.JsonInternalServerErrorHandler(w, err) {
 			return
 		}
@@ -134,11 +120,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Return user object as response
-		js, err := json.Marshal(UserProfile{
-			Id:    user.Id,
-			Name:  user.Name,
-			Email: user.Email,
-		})
+		js, err := serializeUserProfileSchema(user)
 		if core.JsonInternalServerErrorHandler(w, err) {
 			return
 		}

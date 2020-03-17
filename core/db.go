@@ -1,18 +1,34 @@
 package core
 
 import (
+	"context"
+	"fmt"
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
+	"go-playground/core/settings"
 )
 
 var DB *pg.DB
 
+type dbLogger struct{}
+
+func (d dbLogger) BeforeQuery(c context.Context, _ *pg.QueryEvent) (context.Context, error) {
+	return c, nil
+}
+
+func (d dbLogger) AfterQuery(_ context.Context, q *pg.QueryEvent) error {
+	fmt.Println(q.FormattedQuery())
+	return nil
+}
+
 // Create db connection
 func DbConnect() *pg.DB {
+	s := settings.GetSettings()
 	DB = pg.Connect(&pg.Options{
-		User:     "gpuser",
-		Password: "qppassword",
-		Database: "gpdatabase",
+		Addr:     s.GetString("database.address"),
+		User:     s.GetString("database.user"),
+		Password: s.GetString("database.password"),
+		Database: s.GetString("database.name"),
 	})
 	return DB
 }
@@ -42,4 +58,10 @@ func CloseDatabase() error {
 		return err
 	}
 	return nil
+}
+
+// Enable printing queries which this library generates
+func EnableDbQueryLogger() {
+	db := GetDb()
+	db.AddQueryHook(dbLogger{})
 }

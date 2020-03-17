@@ -1,0 +1,13 @@
+{
+  "database": {
+    "address": "localhost:5432",
+    "name": "gpdatabase",
+    "user": "gpuser",
+    "password": "qppassword"
+  },
+  "jwt": {
+    "secret_key": "SECRET",
+    "access_expire_time": 1440,
+    "refresh_expire_time": 2880
+  }
+}

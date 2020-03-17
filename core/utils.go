@@ -46,7 +46,3 @@ func JsonUnauthorizedErrorHandler(w http.ResponseWriter, err error) bool {
 	}
 	return false
 }
-
-func GetJwtSecretKey() []byte {
-	return []byte("SECRET")
-}

@@ -42,12 +42,3 @@ func (u *User) GetTableName() string {
 	modelName := strings.Split(reflect.TypeOf(u).String(), ".")
 	return fmt.Sprintf("%vs", strings.ToLower(modelName[1]))
 }
-
-//func GetUserByEmail(db *pg.DB, email string) (User, error) {
-//	var user User
-//	status, err := db.Model(&user).Where("email = ?", email).Exists()
-//	if err != nil {
-//		return user, err
-//	}
-//	return user, nil
-//}
