@@ -3,7 +3,6 @@ package accounts
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"go-playground/core"
 	"net/http"
 )
@@ -33,7 +32,7 @@ func signUpHandler(w http.ResponseWriter, r *http.Request) {
 		Id:    u.Id,
 		Name:  u.Name,
 		Email: u.Email,
-		Token: core.CreateUserNewJwtToken(u.Email),
+		Token: core.CreateUserNewJwtToken(u.Id),
 	})
 	if core.JsonInternalServerErrorHandler(w, err) {
 		return
@@ -83,7 +82,7 @@ func signInHandler(w http.ResponseWriter, r *http.Request) {
 		Id:    user.Id,
 		Name:  user.Name,
 		Email: user.Email,
-		Token: core.CreateUserNewJwtToken(user.Email),
+		Token: core.CreateUserNewJwtToken(user.Id),
 	})
 	if core.JsonInternalServerErrorHandler(w, err) {
 		return
@@ -94,10 +93,14 @@ func signInHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func profileHandler(w http.ResponseWriter, r *http.Request) {
+	// Get user object and check permissions
 	var user User
 	if !core.PermissionsCheck("isAuthenticated", &user, w, r) {
 		return
 	}
+
+	// Get db connection and get new user if it exists
+	db := core.GetDb()
 
 	switch method := r.Method; method {
 	default: // GET
@@ -114,9 +117,41 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 
 		core.JsonResponce(w, js, http.StatusOK)
 
-	case "POST":
-		fmt.Printf("PUT")
+	case "PUT":
+		// Decode json and get user data
+		var data User
+		err := json.NewDecoder(r.Body).Decode(&data)
+		if core.JsonBadRequestErrorHandler(w, err) {
+			return
+		}
+
+		// Update user name, email object and push changes to db
+		user.Email = data.Email
+		user.Name = data.Name
+		err = db.Update(&user)
+		if err := core.JsonInternalServerErrorHandler(w, err); err {
+			return
+		}
+
+		// Return user object as response
+		js, err := json.Marshal(UserProfile{
+			Id:    user.Id,
+			Name:  user.Name,
+			Email: user.Email,
+		})
+		if core.JsonInternalServerErrorHandler(w, err) {
+			return
+		}
+
+		core.JsonResponce(w, js, http.StatusOK)
+
 	case "DELETE":
-		fmt.Printf("DELETE")
+		// Delete user object
+		err := db.Delete(&user)
+		if err := core.JsonInternalServerErrorHandler(w, err); err {
+			return
+		}
+
+		core.JsonStatusNoContentResponse(w)
 	}
 }

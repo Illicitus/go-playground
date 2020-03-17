@@ -2,11 +2,10 @@ package core
 
 import (
 	"errors"
-	"go-playground/apps/accounts"
 	"net/http"
 )
 
-func PermissionsCheck(permission string, u *accounts.User, w http.ResponseWriter, r *http.Request) bool {
+func PermissionsCheck(permission string, u interface{}, w http.ResponseWriter, r *http.Request) bool {
 	db := GetDb()
 
 	jwtToken := r.Context().Value("userJwtToken")
@@ -17,13 +16,13 @@ func PermissionsCheck(permission string, u *accounts.User, w http.ResponseWriter
 
 	case "isAuthenticated":
 		if jwtToken != nil {
-			userEmail, err := CheckUserJwtToken(jwtToken.(string))
+			userId, err := CheckUserJwtToken(jwtToken.(string))
 			if err != nil {
 				if JsonInternalServerErrorHandler(w, err) {
 					return false
 				}
 			}
-			err = db.Model(u).Where("email = ?", userEmail).Select()
+			err = db.Model(u).Where("id = ?", userId).Select()
 			if err := JsonInternalServerErrorHandler(w, err); err {
 				return false
 			}

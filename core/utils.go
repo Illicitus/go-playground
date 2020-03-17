@@ -14,7 +14,13 @@ func ErrorHandler(err error) {
 func JsonResponce(w http.ResponseWriter, js []byte, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	w.Write(js)
+	_, err := w.Write(js)
+	ErrorHandler(err)
+}
+
+func JsonStatusNoContentResponse(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func JsonBadRequestErrorHandler(w http.ResponseWriter, err error) bool {
