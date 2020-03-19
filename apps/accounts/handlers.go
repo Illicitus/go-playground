@@ -12,7 +12,7 @@ func signUpHandler(w http.ResponseWriter, r *http.Request) {
 	// Decode json and create user object
 	var user User
 	err := json.NewDecoder(r.Body).Decode(&user)
-	if core.JsonBadRequestErrorHandler(w, err) {
+	if core.JsonErrorHandler400(w, err) {
 		return
 	}
 
@@ -23,13 +23,13 @@ func signUpHandler(w http.ResponseWriter, r *http.Request) {
 	db := core.GetDb()
 
 	err = db.Insert(&user)
-	if core.JsonBadRequestErrorHandler(w, err) {
+	if core.JsonErrorHandler400(w, err) {
 		return
 	}
 
 	// Return user object as response and add jwt token
 	js, err := serializeUserProfileWithTokenSchema(user)
-	if core.JsonInternalServerErrorHandler(w, err) {
+	if core.JsonErrorHandler500(w, err) {
 		return
 	}
 
@@ -41,40 +41,40 @@ func signInHandler(w http.ResponseWriter, r *http.Request) {
 	// Decode json and create user object
 	var u User
 	err := json.NewDecoder(r.Body).Decode(&u)
-	if core.JsonBadRequestErrorHandler(w, err) {
+	if core.JsonErrorHandler400(w, err) {
 		return
 	}
 
-	// Get db connection and get new user if it exists
+	// Get db connection and get new user if it exist
 	db := core.GetDb()
 
-	// Check if exists
+	// Check if exist
 	status, err := db.Model(&User{}).Where("email = ?", u.Email).Exists()
-	if core.JsonInternalServerErrorHandler(w, err) {
+	if core.JsonErrorHandler500(w, err) {
 		return
 	}
 
 	if !status {
-		core.JsonBadRequestErrorHandler(w, errors.New("invalid email"))
+		core.JsonErrorHandler400(w, errors.New("invalid email"))
 		return
 	}
 
 	// Select exists user object
 	var user User
 	err = db.Model(&user).Where("email = ?", u.Email).Select()
-	if err := core.JsonInternalServerErrorHandler(w, err); err {
+	if err := core.JsonErrorHandler500(w, err); err {
 		return
 	}
 
 	// Check password
 	if user.checkPassword(u.Password) != true {
-		core.JsonBadRequestErrorHandler(w, errors.New("invalid password"))
+		core.JsonErrorHandler400(w, errors.New("invalid password"))
 		return
 	}
 
 	// Return user object as response and add jwt token
 	js, err := serializeUserProfileWithTokenSchema(user)
-	if core.JsonInternalServerErrorHandler(w, err) {
+	if core.JsonErrorHandler500(w, err) {
 		return
 	}
 
@@ -89,7 +89,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get db connection and get new user if it exists
+	// Get db connection and get new user if it exist
 	db := core.GetDb()
 
 	switch method := r.Method; method {
@@ -97,7 +97,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Return user object as response
 		js, err := serializeUserProfileSchema(user)
-		if core.JsonInternalServerErrorHandler(w, err) {
+		if core.JsonErrorHandler500(w, err) {
 			return
 		}
 
@@ -107,7 +107,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		// Decode json and get user data
 		var data User
 		err := json.NewDecoder(r.Body).Decode(&data)
-		if core.JsonBadRequestErrorHandler(w, err) {
+		if core.JsonErrorHandler400(w, err) {
 			return
 		}
 
@@ -115,13 +115,13 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		user.Email = data.Email
 		user.Name = data.Name
 		err = db.Update(&user)
-		if err := core.JsonInternalServerErrorHandler(w, err); err {
+		if err := core.JsonErrorHandler500(w, err); err {
 			return
 		}
 
 		// Return user object as response
 		js, err := serializeUserProfileSchema(user)
-		if core.JsonInternalServerErrorHandler(w, err) {
+		if core.JsonErrorHandler500(w, err) {
 			return
 		}
 
@@ -130,10 +130,10 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	case "DELETE":
 		// Delete user object
 		err := db.Delete(&user)
-		if err := core.JsonInternalServerErrorHandler(w, err); err {
+		if err := core.JsonErrorHandler500(w, err); err {
 			return
 		}
 
-		core.JsonStatusNoContentResponse(w)
+		core.JsonResponse204(w)
 	}
 }
