@@ -8,22 +8,17 @@ import (
 )
 
 func signUpHandler(w http.ResponseWriter, r *http.Request) {
-
-	// Decode json and create user object
+	// Decode json and validate it
 	var user User
-	err := json.NewDecoder(r.Body).Decode(&user)
-	if core.JsonErrorHandler400(w, err) {
+
+	err := user.decodeAndValidate(w, r)
+	if err != nil {
 		return
 	}
 
-	// Setup user hashed password
-	user.setPassword()
-
-	// Get db connection and insert new user
-	db := core.GetDb()
-
-	err = db.Insert(&user)
-	if core.JsonErrorHandler400(w, err) {
+	// Insert new user
+	err = user.createNewUser(w)
+	if err != nil {
 		return
 	}
 
@@ -33,11 +28,10 @@ func signUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	core.JsonResponce(w, js, http.StatusCreated)
+	core.JsonResponse201(w, js)
 }
 
 func signInHandler(w http.ResponseWriter, r *http.Request) {
-
 	// Decode json and create user object
 	var u User
 	err := json.NewDecoder(r.Body).Decode(&u)
@@ -78,7 +72,7 @@ func signInHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	core.JsonResponce(w, js, http.StatusOK)
+	core.JsonResponse200(w, js)
 
 }
 
@@ -101,7 +95,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		core.JsonResponce(w, js, http.StatusOK)
+		core.JsonResponse200(w, js)
 
 	case "PUT":
 		// Decode json and get user data
@@ -125,7 +119,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		core.JsonResponce(w, js, http.StatusOK)
+		core.JsonResponse200(w, js)
 
 	case "DELETE":
 		// Delete user object

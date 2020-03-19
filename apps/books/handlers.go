@@ -40,7 +40,7 @@ func listCreateBooksHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		core.JsonResponce(w, js, http.StatusOK)
+		core.JsonResponse200(w, js)
 
 	case "POST":
 		// Decode json and get book data
@@ -66,7 +66,7 @@ func listCreateBooksHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		core.JsonResponce(w, js, http.StatusCreated)
+		core.JsonResponse201(w, js)
 	}
 }
 
@@ -118,7 +118,7 @@ func retrieveUpdateDeleteBooksHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		core.JsonResponce(w, js, http.StatusOK)
+		core.JsonResponse200(w, js)
 
 	case "PUT":
 		// Check if book with selected id exist
@@ -169,7 +169,7 @@ func retrieveUpdateDeleteBooksHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		core.JsonResponce(w, js, http.StatusOK)
+		core.JsonResponse200(w, js)
 
 	case "DELETE":
 		// Check if book with selected id exist
