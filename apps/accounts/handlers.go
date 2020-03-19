@@ -11,14 +11,12 @@ func signUpHandler(w http.ResponseWriter, r *http.Request) {
 	// Decode json and validate it
 	var user User
 
-	err := user.decodeAndValidate(w, r)
-	if err != nil {
+	if err := user.decodeAndValidate(w, r); err != nil {
 		return
 	}
 
 	// Insert new user
-	err = user.createNewUser(w)
-	if err != nil {
+	if err := user.createNewUser(w); err != nil {
 		return
 	}
 
@@ -34,8 +32,8 @@ func signUpHandler(w http.ResponseWriter, r *http.Request) {
 func signInHandler(w http.ResponseWriter, r *http.Request) {
 	// Decode json and create user object
 	var u User
-	err := json.NewDecoder(r.Body).Decode(&u)
-	if core.JsonErrorHandler400(w, err) {
+
+	if err := json.NewDecoder(r.Body).Decode(&u); core.JsonErrorHandler400(w, err) {
 		return
 	}
 
@@ -55,13 +53,12 @@ func signInHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Select exists user object
 	var user User
-	err = db.Model(&user).Where("email = ?", u.Email).Select()
-	if err := core.JsonErrorHandler500(w, err); err {
+	if err := user.getUserByEmail(u.Email); core.JsonErrorHandler500(w, err) {
 		return
 	}
 
 	// Check password
-	if user.checkPassword(u.Password) != true {
+	if !user.checkPassword(u.Password) {
 		core.JsonErrorHandler400(w, errors.New("invalid password"))
 		return
 	}
@@ -83,9 +80,6 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get db connection and get new user if it exist
-	db := core.GetDb()
-
 	switch method := r.Method; method {
 	default: // GET
 
@@ -106,10 +100,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Update user name, email object and push changes to db
-		user.Email = data.Email
-		user.Name = data.Name
-		err = db.Update(&user)
-		if err := core.JsonErrorHandler500(w, err); err {
+		if err := user.updateUser(w, data); err != nil {
 			return
 		}
 
@@ -123,8 +114,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 
 	case "DELETE":
 		// Delete user object
-		err := db.Delete(&user)
-		if err := core.JsonErrorHandler500(w, err); err {
+		if err := user.deleteUser(w); err != nil {
 			return
 		}
 
