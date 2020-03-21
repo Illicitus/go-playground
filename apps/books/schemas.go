@@ -57,3 +57,9 @@ func serializeManyBookSchema(b []Book) ([]byte, error) {
 	}
 	return json.Marshal(r)
 }
+
+type CreteUpdateBookSchema struct {
+	Id           int64  `json:"id"`
+	Title        string `validate:"nonzero",json:"title"`
+	TitleImageId int64  `json:"titleImage"`
+}

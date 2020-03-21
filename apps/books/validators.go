@@ -7,14 +7,15 @@ import (
 	"net/http"
 )
 
-func (b *Book) validate(w http.ResponseWriter) error {
+func (b *CreteUpdateBookSchema) validate(w http.ResponseWriter) error {
+
 	if err := validator.Validate(b); err != nil {
 		core.JsonErrorHandler400(w, err)
 		return err
 	}
 
 	db := core.GetDb()
-	status, err := db.Model(&BookTitleImage{}).Where("id = ?", b.TitleImage.Id).Exists()
+	status, err := db.Model(&BookTitleImage{}).Where("id = ?", b.TitleImageId).Exists()
 	if core.JsonErrorHandler500(w, err) {
 		return err
 	}
@@ -27,13 +28,19 @@ func (b *Book) validate(w http.ResponseWriter) error {
 }
 
 func (b *Book) decodeAndValidate(w http.ResponseWriter, r *http.Request) error {
+	var createUpdateBook CreteUpdateBookSchema
 
-	if err := core.DecodeRequestData(b, w, r); err != nil {
+	if err := core.DecodeRequestData(&createUpdateBook, w, r); err != nil {
 		return err
 	}
 
-	if err := b.validate(w); err != nil {
+	if err := createUpdateBook.validate(w); err != nil {
 		return err
 	}
+
+	// Update book data
+	b.Title = createUpdateBook.Title
+	b.TitleImageId = createUpdateBook.TitleImageId
+
 	return nil
 }

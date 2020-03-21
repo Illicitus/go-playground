@@ -47,3 +47,39 @@ func (b *Book) createNewBook(w http.ResponseWriter) error {
 	}
 	return nil
 }
+
+func (b *Book) getBookById(w http.ResponseWriter, id int64) error {
+	db := core.GetDb()
+
+	err := db.
+		Model(b).
+		Where("book.id = ?", id).
+		ColumnExpr("book.*").
+		ColumnExpr("u.id AS author__id, u.name AS author__name, u.email AS author__email").
+		ColumnExpr("t.id AS title_image__id, t.source AS title_image__source, t.thumbnail AS title_image__thumbnail").
+		Join("JOIN users AS u ON u.id = book.author_id").
+		Join("JOIN book_title_images AS t ON t.id = book.title_image_id").
+		Select()
+
+	if core.JsonErrorHandler500(w, err) {
+		return err
+	}
+	return nil
+}
+
+func (b *Book) updateBook(w http.ResponseWriter, id int64) error {
+	db := core.GetDb()
+
+	_, err := db.
+		Model(b).
+		Set("title = ?title").
+		Set("title_image_id = ?title_image_id").
+		Set("author_id = ?author_id").
+		Where("id = ?", id).
+		Update()
+
+	if core.JsonErrorHandler500(w, err) {
+		return err
+	}
+	return nil
+}

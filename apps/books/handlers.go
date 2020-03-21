@@ -1,7 +1,6 @@
 package books
 
 import (
-	"encoding/json"
 	"github.com/gorilla/mux"
 	"go-playground/apps/accounts"
 	"go-playground/core"
@@ -88,6 +87,10 @@ func listCreateBooksHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Return book object as response
+		if err := book.getBookById(w, book.Id); err != nil {
+			return
+		}
+
 		js, err := serializeBookSchema(book)
 		if core.JsonErrorHandler500(w, err) {
 			return
@@ -128,14 +131,7 @@ func retrieveUpdateDeleteBooksHandler(w http.ResponseWriter, r *http.Request) {
 	switch method := r.Method; method {
 	default: // GET
 		var book Book
-		err := db.
-			Model(&book).
-			Where("book.id = ?", id).
-			ColumnExpr("book.*").
-			ColumnExpr("u.id AS author__id, u.name AS author__name, u.email AS author__email").
-			Join("JOIN users AS u ON u.id = book.author_id").
-			Select()
-		if err := core.JsonErrorHandler500(w, err); err {
+		if err := book.getBookById(w, id); err != nil {
 			return
 		}
 
@@ -161,32 +157,20 @@ func retrieveUpdateDeleteBooksHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Decode json and get book data
 		var data Book
-		err = json.NewDecoder(r.Body).Decode(&data)
-		if core.JsonErrorHandler400(w, err) {
+		data.AuthorId = user.Id
+
+		if err := data.decodeAndValidate(w, r); err != nil {
+			return
+		}
+
+		err = data.updateBook(w, id)
+		if err != nil {
 			return
 		}
 
 		var book Book
-		err = db.
-			Model(&book).
-			Where("book.id = ?", id).
-			ColumnExpr("book.*").
-			ColumnExpr("u.id AS author__id, u.name AS author__name, u.email AS author__email").
-			Join("JOIN users AS u ON u.id = book.author_id").
-			Select()
-		if err := core.JsonErrorHandler500(w, err); err {
-			return
-		}
-
-		// Update book info and add author info
-		book.Title = data.Title
-		book.TitleImage = data.TitleImage
-		book.Author = user
-		book.AuthorId = user.Id
-
-		// Update book
-		err = db.Update(&book)
-		if core.JsonErrorHandler400(w, err) {
+		err = book.getBookById(w, id)
+		if err != nil {
 			return
 		}
 
