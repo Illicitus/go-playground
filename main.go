@@ -26,6 +26,7 @@ func main() {
 	apps := []interface{}{
 		(*accounts.User)(nil),
 		(*books.Book)(nil),
+		(*books.BookTitleImage)(nil),
 	}
 
 	core.ErrorHandler(core.CreateSchema(db, apps))

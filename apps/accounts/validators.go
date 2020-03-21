@@ -28,7 +28,7 @@ func (u *User) validate(w http.ResponseWriter) error {
 }
 
 func (u *User) decodeAndValidate(w http.ResponseWriter, r *http.Request) error {
-	if err := u.decodeRequestData(w, r); err != nil {
+	if err := core.DecodeRequestData(u, w, r); err != nil {
 		return err
 	}
 	if err := u.validate(w); err != nil {

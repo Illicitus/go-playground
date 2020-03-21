@@ -9,6 +9,37 @@ import (
 	"strconv"
 )
 
+func createBookTitleImage(w http.ResponseWriter, r *http.Request) {
+	// Get user object and check permissions
+	var user accounts.User
+	if !core.PermissionsCheck("isAuthenticated", &user, w, r) {
+		return
+	}
+
+	// Parse form data
+	paths, err := core.ParseValidateAndCopyFile(w, r, []string{"image"})
+	if err != nil {
+		return
+	}
+
+	var bookTitleImage BookTitleImage
+	bookTitleImage.Source = paths["image"]
+	bookTitleImage.Thumbnail = paths["image"]
+
+	// Insert new book title image
+	if err := bookTitleImage.createNewBookTitleImage(w); err != nil {
+		return
+	}
+
+	// Return book object as response
+	js, err := serializeBookTitleImageSchema(bookTitleImage)
+	if core.JsonErrorHandler500(w, err) {
+		return
+	}
+
+	core.JsonResponse201(w, js)
+}
+
 func listCreateBooksHandler(w http.ResponseWriter, r *http.Request) {
 	// Get user object and check permissions
 	var user accounts.User
@@ -45,18 +76,14 @@ func listCreateBooksHandler(w http.ResponseWriter, r *http.Request) {
 	case "POST":
 		// Decode json and get book data
 		var book Book
-		err := json.NewDecoder(r.Body).Decode(&book)
-		if core.JsonErrorHandler400(w, err) {
+		book.AuthorId = user.Id
+
+		if err := book.decodeAndValidate(w, r); err != nil {
 			return
 		}
 
-		// Add author info
-		book.Author = user
-		book.AuthorId = user.Id
-
 		// Insert new book
-		err = db.Insert(&book)
-		if core.JsonErrorHandler400(w, err) {
+		if err := book.createNewBook(w); err != nil {
 			return
 		}
 
