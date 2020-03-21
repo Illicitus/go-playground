@@ -46,21 +46,10 @@ func listCreateBooksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get db connection and get list of books if they exist
-	db := core.GetDb()
-
 	switch method := r.Method; method {
 	default: // GET
-		var books []Book
-		err := db.
-			Model(&books).
-			Where("author_id = ?", user.Id).
-			ColumnExpr("book.*").
-			ColumnExpr("u.id AS author__id, u.name AS author__name, u.email AS author__email").
-			Join("JOIN users AS u ON u.id = book.author_id").
-			Order("id ASC").
-			Select()
-		if err := core.JsonErrorHandler500(w, err); err {
+		books, err := listBooksByAuthorId(w, user.Id)
+		if err != nil {
 			return
 		}
 
@@ -100,7 +89,7 @@ func listCreateBooksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func retrieveUpdateDeleteBooksHandler(w http.ResponseWriter, r *http.Request) {
+func retrieveUpdateDeleteBookHandler(w http.ResponseWriter, r *http.Request) {
 	// Get user object and check permissions
 	var user accounts.User
 	if !core.PermissionsCheck("isAuthenticated", &user, w, r) {
@@ -144,17 +133,6 @@ func retrieveUpdateDeleteBooksHandler(w http.ResponseWriter, r *http.Request) {
 		core.JsonResponse200(w, js)
 
 	case "PUT":
-		// Check if book with selected id exist
-		status, err := db.Model(&Book{}).Where("id = ?", id).Exists()
-		if core.JsonErrorHandler500(w, err) {
-			return
-		}
-
-		if !status {
-			core.JsonErrorHandler404(w)
-			return
-		}
-
 		// Decode json and get book data
 		var data Book
 		data.AuthorId = user.Id
@@ -183,17 +161,6 @@ func retrieveUpdateDeleteBooksHandler(w http.ResponseWriter, r *http.Request) {
 		core.JsonResponse200(w, js)
 
 	case "DELETE":
-		// Check if book with selected id exist
-		status, err := db.Model(&Book{}).Where("id = ?", id).Exists()
-		if core.JsonErrorHandler500(w, err) {
-			return
-		}
-
-		if !status {
-			core.JsonErrorHandler404(w)
-			return
-		}
-
 		err = db.Delete(&Book{Id: id})
 		if err := core.JsonErrorHandler500(w, err); err {
 			return
@@ -201,5 +168,80 @@ func retrieveUpdateDeleteBooksHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Return empty response
 		core.JsonResponse204(w)
+	}
+}
+
+func listCreateBookComments(w http.ResponseWriter, r *http.Request) {
+	// Get user object and check permissions
+	var user accounts.User
+	if !core.PermissionsCheck("isAuthenticated", &user, w, r) {
+		return
+	}
+
+	// Get db connection and get book id and check if it exist
+	db := core.GetDb()
+
+	// Get book id
+	params := mux.Vars(r)
+	id, err := strconv.ParseInt(params["id"], 10, 64)
+	if core.JsonErrorHandler400(w, err) {
+		return
+	}
+
+	// Check if exist
+	status, err := db.Model(&Book{}).Where("id = ?", id).Exists()
+	if core.JsonErrorHandler500(w, err) {
+		return
+	}
+
+	if !status {
+		core.JsonErrorHandler404(w)
+		return
+	}
+
+	switch method := r.Method; method {
+	default: // GET
+		bookComments, err := listBookCommentsByBookId(w, id)
+		if err != nil {
+			return
+		}
+
+		// Return book comment objects as response
+		js, err := serializeManyBookCommentSchema(bookComments)
+		if core.JsonErrorHandler500(w, err) {
+			return
+		}
+
+		core.JsonResponse200(w, js)
+
+	case "POST":
+
+		// Decode json and get book comment data
+		var data BookComment
+		data.AuthorId = user.Id
+		data.BookId = id
+
+		if err := data.decodeAndValidate(w, r); err != nil {
+			return
+		}
+
+		err = data.createBookComment(w)
+		if err != nil {
+			return
+		}
+
+		var bookComment BookComment
+		err = bookComment.getBookCommentById(w, data.Id)
+		if err != nil {
+			return
+		}
+
+		// Return book object as response
+		js, err := serializeBookCommentSchema(bookComment)
+		if core.JsonErrorHandler500(w, err) {
+			return
+		}
+
+		core.JsonResponse200(w, js)
 	}
 }

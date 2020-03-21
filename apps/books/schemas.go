@@ -63,3 +63,43 @@ type CreteUpdateBookSchema struct {
 	Title        string `validate:"nonzero",json:"title"`
 	TitleImageId int64  `json:"titleImage"`
 }
+
+type BookCommentSchema struct {
+	Id      int64                       `json:"id"`
+	Message string                      `json:"message"`
+	Author  *accounts.UserProfileSchema `json:"author"`
+}
+
+func serializeBookCommentSchema(bc BookComment) ([]byte, error) {
+	return json.Marshal(BookCommentSchema{
+		Id:      bc.Id,
+		Message: bc.Message,
+		Author: &accounts.UserProfileSchema{
+			Id:    bc.Author.Id,
+			Name:  bc.Author.Name,
+			Email: bc.Author.Email,
+		},
+	})
+}
+
+func serializeManyBookCommentSchema(bc []BookComment) ([]byte, error) {
+	var r []BookCommentSchema
+
+	for _, v := range bc {
+		r = append(r, BookCommentSchema{
+			Id:      v.Id,
+			Message: v.Message,
+			Author: &accounts.UserProfileSchema{
+				Id:    v.Author.Id,
+				Name:  v.Author.Name,
+				Email: v.Author.Email,
+			}})
+	}
+	return json.Marshal(r)
+}
+
+type CreteUpdateBookCommentSchema struct {
+	Id       int64  `json:"id"`
+	Message  string `json:"message"`
+	AuthorId int64  `json:"author"`
+}

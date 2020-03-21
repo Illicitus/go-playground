@@ -44,3 +44,28 @@ func (b *Book) decodeAndValidate(w http.ResponseWriter, r *http.Request) error {
 
 	return nil
 }
+
+func (bc *CreteUpdateBookCommentSchema) validate(w http.ResponseWriter) error {
+	if err := validator.Validate(bc); err != nil {
+		core.JsonErrorHandler400(w, err)
+		return err
+	}
+	return nil
+}
+
+func (bc *BookComment) decodeAndValidate(w http.ResponseWriter, r *http.Request) error {
+	var createBookComment CreteUpdateBookCommentSchema
+
+	if err := core.DecodeRequestData(&createBookComment, w, r); err != nil {
+		return err
+	}
+
+	if err := createBookComment.validate(w); err != nil {
+		return err
+	}
+
+	// Update book comment data
+	bc.Message = createBookComment.Message
+
+	return nil
+}
