@@ -27,12 +27,13 @@ func (b *BookTitleImage) createNewBookTitleImage(w http.ResponseWriter) error {
 }
 
 type Book struct {
-	Id           int64          `json:"id"`
-	Title        string         `validate:"nonzero",json:"title"`
-	TitleImageId int64          `pg:"fk:titleImage_id",json:"id"`
-	TitleImage   BookTitleImage `json:"titleImage"`
-	AuthorId     int64          `json:"authorId"`
-	Author       accounts.User  `pg:"fk:author_id",json:"id"`
+	Id           int64            `json:"id"`
+	Title        string           `validate:"nonzero",json:"title"`
+	TitleImageId int64            `pg:"fk:titleImage_id",json:"id"`
+	TitleImage   BookTitleImage   `json:"titleImage"`
+	AuthorId     int64            `json:"authorId"`
+	Author       accounts.User    `pg:"fk:author_id",json:"id"`
+	Likes        []*accounts.User `pg:"many2many:book_likes"`
 }
 
 func (b *Book) str() string {
@@ -101,6 +102,28 @@ func (b *Book) updateBook(w http.ResponseWriter, id int64) error {
 
 	if core.JsonErrorHandler500(w, err) {
 		return err
+	}
+	return nil
+}
+
+type BookLikes struct {
+	BookId int64
+	UserId int64
+}
+
+func LikeOrDislike(w http.ResponseWriter, bui int64, uid int64) error {
+	db := core.GetDb()
+
+	if exists, err := db.Model(&BookLikes{}).Where("book_id = ?", bui).Where("user_id = ?", uid).Exists(); core.JsonErrorHandler500(w, err) {
+		return err
+	} else if exists {
+		if _, err := db.Model(&BookLikes{}).Where("book_id = ?", bui).Where("user_id = ?", uid).Delete(); core.JsonErrorHandler500(w, err) {
+			return err
+		}
+	} else {
+		if err := db.Insert(&BookLikes{BookId: bui, UserId: uid}); core.JsonErrorHandler500(w, err) {
+			return err
+		}
 	}
 	return nil
 }

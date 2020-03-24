@@ -245,3 +245,38 @@ func listCreateBookComments(w http.ResponseWriter, r *http.Request) {
 		core.JsonResponse200(w, js)
 	}
 }
+
+func likeDislikeBook(w http.ResponseWriter, r *http.Request) {
+	// Get user object and check permissions
+	var user accounts.User
+	if !core.PermissionsCheck("isAuthenticated", &user, w, r) {
+		return
+	}
+
+	// Get db connection and get book id and check if it exist
+	db := core.GetDb()
+
+	// Get book id
+	params := mux.Vars(r)
+	id, err := strconv.ParseInt(params["id"], 10, 64)
+	if core.JsonErrorHandler400(w, err) {
+		return
+	}
+
+	// Check if exist
+	status, err := db.Model(&Book{}).Where("id = ?", id).Exists()
+	if core.JsonErrorHandler500(w, err) {
+		return
+	}
+
+	if !status {
+		core.JsonErrorHandler404(w)
+		return
+	}
+
+	if err := LikeOrDislike(w, id, user.Id); err != nil {
+		return
+	}
+
+	core.JsonResponse204(w)
+}

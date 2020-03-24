@@ -28,6 +28,7 @@ func main() {
 		(*books.Book)(nil),
 		(*books.BookTitleImage)(nil),
 		(*books.BookComment)(nil),
+		(*books.BookLikes)(nil),
 	}
 
 	core.ErrorHandler(core.CreateSchema(db, apps))

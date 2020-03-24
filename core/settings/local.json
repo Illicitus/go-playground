@@ -7,7 +7,7 @@
   },
   "jwt": {
     "secret_key": "SECRET",
-    "access_expire_time": 1440,
-    "refresh_expire_time": 2880
+    "access_expire_time": 2592000,
+    "refresh_expire_time": 2592000
   }
 }
